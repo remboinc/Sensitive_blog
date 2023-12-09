@@ -22,7 +22,7 @@ def serialize_post(post):
         'slug': post.slug,
         'tags': [serialize_tag(tag) for tag in post.tags.all()],
         'first_tag_title': post.tags.all()[0].title,
-    }
+}
 
 
 def serialize_tag(tag):
@@ -33,10 +33,10 @@ def serialize_tag(tag):
 
 
 def index(request):
-    posts = Post.objects.annotate(likes_count=Count('likes'))
+    posts = Post.objects.annotate(likes_count=Count('likes')).prefetch_related('author')
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
-    fresh_posts = Post.objects.order_by('published_at')
+    fresh_posts = Post.objects.order_by('published_at').prefetch_related('author')
     most_fresh_posts = list(fresh_posts)[-5:]
 
     tags = Tag.objects.annotate(posts_count=Count('posts'))
