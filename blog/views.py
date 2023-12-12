@@ -16,7 +16,7 @@ def serialize_post(post):
         'title': post.title,
         'teaser_text': post.text[:200],
         'author': post.author.username,
-        'comments_amount': post.comments,
+        'comments_amount': post.comments_count,
         'image_url': post.image.url if post.image else None,
         'published_at': post.published_at,
         'slug': post.slug,
@@ -47,13 +47,21 @@ def serialize_tag(tag):
 
 
 def index(request):
-    posts = Post.objects.annotate(likes_count=Count('likes'), comments_amount=Count('comments')).prefetch_related('author')
+    posts = Post.objects.annotate(
+        likes_count=Count('likes', distinct=True),
+        comments_count=Count('comments', distinct=True)
+    ).prefetch_related('author')
     most_popular_posts = posts.order_by('-likes_count')[:5]
 
-    fresh_posts = Post.objects.order_by('published_at').prefetch_related('author')
+    fresh_posts = Post.objects.order_by('published_at').annotate(
+        likes_count=Count('likes', distinct=True),
+        comments_count=Count('comments', distinct=True)
+    ).prefetch_related('author')
     most_fresh_posts = list(fresh_posts)[-5:]
 
-    tags = Tag.objects.annotate(posts_count=Count('posts'))
+    tags = Tag.objects.annotate(
+        posts_count=Count('posts', distinct=True),
+    )
     popular_tags = tags.order_by('-posts_count')
     most_popular_tags = popular_tags[:5]
 
