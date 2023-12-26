@@ -51,16 +51,25 @@ def index(request):
         likes_count=Count('likes', distinct=True)
     ).order_by('-likes_count')[:5]
     most_popular_posts_ids = [post.id for post in most_popular_posts]
-    posts_with_comments = Post.objects.filter(id__in=most_popular_posts_ids).annotate(comments_count=Count('comments'))
+    posts_with_comments = Post.objects.filter(
+        id__in=most_popular_posts_ids
+    ).annotate(comments_count=Count('comments'))
     ids_and_comments = posts_with_comments.values_list('id', 'comments_count')
     count_for_id = dict(ids_and_comments)
     for post in most_popular_posts:
         post.comments_count = count_for_id[post.id]
 
-    fresh_posts = Post.objects.order_by('published_at').prefetch_related('author')
-    most_fresh_posts = list(fresh_posts)[-5:]
-
-
+    most_fresh_posts = Post.objects.annotate(
+        likes_count=Count('likes', distinct=True)
+    ).order_by('-published_at').prefetch_related('tags')[:5]
+    most_fresh_posts_ids = [post.id for post in most_fresh_posts]
+    posts_with_comments = Post.objects.filter(
+        id__in=most_fresh_posts_ids
+    ).annotate(comments_count=Count('comments'))
+    ids_and_comments = posts_with_comments.values_list('id', 'comments_count')
+    count_for_id = dict(ids_and_comments)
+    for post in most_fresh_posts:
+        post.comments_count = count_for_id[post.id]
 
     tags = Tag.objects.annotate(
         posts_count=Count('posts', distinct=True),
